@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from pathlib import Path
 
 import torch
@@ -21,7 +22,7 @@ from dataset import SegDataset
 # ===============================================================
 # 1. Training Function
 # ===============================================================
-def main(cfg_path: str = "defaults.json"):
+def main(cfg_path: str | Path):
     # 設定読み込み
     cfg = Config.from_json(cfg_path)
     device = torch.device("cuda")
@@ -188,4 +189,7 @@ def main(cfg_path: str = "defaults.json"):
 
 if __name__ == "__main__":
     assert torch.cuda.is_available()
-    main("./configs/defaults.json")
+    parser = ArgumentParser()
+    parser.add_argument("config", type=Path, default=Path("./configs/defaults.json"))
+    args = parser.parse_args()
+    main(args.config)

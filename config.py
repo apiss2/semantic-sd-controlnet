@@ -52,4 +52,4 @@ class Config(BaseModel):
 
 
 if __name__ == "__main__":
-    Config().to_json("defaults.json")
+    Config().to_json("./configs/defaults.json")
