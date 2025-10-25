@@ -51,7 +51,7 @@ class SegDataset(Dataset):
 
     def __getitem__(self, i):
         img = Image.open(self.img_paths[i]).convert("RGB")
-        seg = Image.open(self.seg_paths[i])
+        seg = Image.open(self.seg_paths[i]).convert("P")
         seg.putpalette(color_map().flatten().tolist())
         img = self.to_img(img)  # (3,H,W), [-1,1]
         seg = self.to_seg(seg.convert("RGB"))  # PIL
