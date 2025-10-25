@@ -165,7 +165,7 @@ def main(cfg_path: str | Path):
             if global_step % cfg.sample_every == 0:
                 pipe.controlnet.eval()
                 N = min(8, bsz)
-                seg_batch = seg[:N].detach.cpu()
+                seg_batch = seg[:N].detach().cpu()
                 with torch.no_grad():
                     images = pipe(
                         prompt=[""] * N,  # プロンプトなし
