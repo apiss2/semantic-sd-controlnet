@@ -28,6 +28,7 @@ class Config(BaseModel):
     epochs: int = 1
     grad_accum: int = 4
     sample_every: int = 1000
+    save_every: int = 1
 
     model: ModelConfig = ModelConfig()
     dataset: DatasetConfig = DatasetConfig()

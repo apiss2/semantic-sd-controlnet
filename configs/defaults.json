@@ -5,6 +5,7 @@
     "epochs": 1,
     "grad_accum": 4,
     "sample_every": 1000,
+    "save_every": 1000,
     "model": {
         "model_id": "runwayml/stable-diffusion-v1-5"
     },

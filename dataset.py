@@ -25,6 +25,8 @@ class SegDataset(Dataset):
         assert seg_dir.exists(), seg_dir.as_posix()
         self.img_paths = sorted(img_dir.glob(f"*{img_suffix}"))
         self.seg_paths = [seg_dir.joinpath(p.stem + seg_suffix) for p in self.img_paths]
+        assert len(self.img_paths) > 0, "There is no images. Please check suffix."
+        assert len(self.seg_paths) > 0, "There is no segs. Please check name or suffix."
         # 変換を定義
         self.to_img = T.Compose(
             [
