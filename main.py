@@ -180,7 +180,7 @@ def main(cfg_path: str | Path):
                 pipe.controlnet.train()
 
         # Save checkpoint
-        if (epoch + 1) % cfg.save_every:
+        if ((epoch + 1) % cfg.save_every) == 0:
             save_path = out_dir / f"controlnet_epoch{epoch + 1}.pt"
             torch.save(controlnet.state_dict(), save_path)
             print(f"Saved: {save_path.as_posix()}")
