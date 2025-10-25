@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import torch
+import torchvision.transforms.functional as TF
 from diffusers import (
     AutoencoderKL,
     ControlNetModel,
@@ -13,6 +14,7 @@ from diffusers.utils.import_utils import is_xformers_available
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
 from tqdm import tqdm
 
 from config import Config
@@ -162,21 +164,21 @@ def main(cfg_path: str | Path):
             # ==========================
             if global_step % cfg.sample_every == 0:
                 pipe.controlnet.eval()
+                N = min(8, bsz)
+                seg_batch = seg[:N].detach.cpu()
                 with torch.no_grad():
-                    seg_sample = seg[0:1]
-                    image = pipe(
-                        prompt=[""],  # プロンプトなし
-                        controlnet_conditioning_image=seg_sample,
+                    images = pipe(
+                        prompt=[""] * N,  # プロンプトなし
                         num_inference_steps=20,
                         guidance_scale=1.0,
-                    ).images[0]
+                        image=seg_batch,
+                    ).images
+                    # PIL → Tensor にしてmake_gridで並べる
+                    tensors = [TF.to_tensor(img) for img in images]
+                    grid = make_grid(tensors, nrow=2)
 
-                    # TensorBoardに画像を追加
-                    image = torch.ByteStorage.from_buffer(image.tobytes())
-                    image = torch.ByteTensor(image).float()
-                    image = image.reshape(image.size[1], image.size[0], 3)
-                    image_tensor = torch.tensor(image.permute(2, 0, 1) / 255.0)
-                    writer.add_image("sample/generated", image_tensor, global_step)
+                    # TensorBoardに出力
+                    writer.add_image("sample/generated", grid, global_step)
                 pipe.controlnet.train()
 
         # Save checkpoint
