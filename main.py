@@ -175,7 +175,7 @@ def main(cfg_path: str | Path):
                     ).images
                     # PIL → Tensor にしてmake_gridで並べる
                     tensors = [TF.to_tensor(img) for img in images]
-                    grid = make_grid(tensors, nrow=2)
+                    grid = make_grid(tensors, nrow=4)
 
                     # TensorBoardに出力
                     writer.add_image("sample/generated", grid, global_step)
