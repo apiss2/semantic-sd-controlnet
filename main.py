@@ -1,20 +1,21 @@
-import torch
-from torch.utils.data import DataLoader
-from torch.optim import AdamW
-from tqdm import tqdm
 from pathlib import Path
 
+import torch
 from diffusers import (
     AutoencoderKL,
-    UNet2DConditionModel,
     ControlNetModel,
     DDPMScheduler,
     StableDiffusionControlNetPipeline,
+    UNet2DConditionModel,
 )
 from diffusers.utils.import_utils import is_xformers_available
+from torch.optim import AdamW
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
-from dataset import SegDataset
 from config import Config
+from dataset import SegDataset
 
 
 # ===============================================================
@@ -26,6 +27,9 @@ def main(cfg_path: str = "defaults.json"):
     device = torch.device("cuda")
     out_dir = Path(cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # TensorBoard
+    writer = SummaryWriter(log_dir=out_dir / "logs")
 
     # ===========================================================
     # 2. Dataset / DataLoader
@@ -86,6 +90,7 @@ def main(cfg_path: str = "defaults.json"):
         )
         ehs = pipe.text_encoder(text_inputs.input_ids.to(device))[0]
 
+    global_step = 0
     for epoch in range(cfg.epochs):
         pbar = tqdm(loader, desc=f"Epoch {epoch + 1}/{cfg.epochs}")
 
@@ -132,12 +137,46 @@ def main(cfg_path: str = "defaults.json"):
 
             scaler.scale(loss).backward()
 
+            # 勾配ノルムの測定
+            grad_norm = 0.0
+            for p in pipe.controlnet.parameters():
+                if p.grad is not None:
+                    grad_norm += p.grad.data.norm(2).item() ** 2
+            grad_norm = grad_norm**0.5
+
+            # TensorBoardにloss/gradを記録
+            writer.add_scalar("train/loss", loss.item(), global_step)
+            writer.add_scalar("train/grad_norm", grad_norm, global_step)
+
             if (step + 1) % cfg.grad_accum == 0:
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
 
-            pbar.set_postfix(loss=f"{loss.item():.4f}")
+            pbar.set_postfix(loss=f"{loss.item():.4f}", grad=f"{grad_norm:.4f}")
+            global_step += 1
+
+            # ==========================
+            # サンプル生成（cfg.sample_everyごと）
+            # ==========================
+            if global_step % cfg.sample_every == 0:
+                pipe.controlnet.eval()
+                with torch.no_grad():
+                    seg_sample = seg[0:1]
+                    image = pipe(
+                        prompt=[""],  # プロンプトなし
+                        controlnet_conditioning_image=seg_sample,
+                        num_inference_steps=20,
+                        guidance_scale=1.0,
+                    ).images[0]
+
+                    # TensorBoardに画像を追加
+                    image = torch.ByteStorage.from_buffer(image.tobytes())
+                    image = torch.ByteTensor(image).float()
+                    image = image.reshape(image.size[1], image.size[0], 3)
+                    image_tensor = torch.tensor(image.permute(2, 0, 1) / 255.0)
+                    writer.add_image("sample/generated", image_tensor, global_step)
+                pipe.controlnet.train()
 
         # Save checkpoint
         save_path = out_dir / f"controlnet_epoch{epoch + 1}.pt"

@@ -27,6 +27,7 @@ class Config(BaseModel):
     batch_size: int = 1
     epochs: int = 1
     grad_accum: int = 4
+    sample_every: int = 1000
 
     model: ModelConfig = ModelConfig()
     dataset: DatasetConfig = DatasetConfig()
