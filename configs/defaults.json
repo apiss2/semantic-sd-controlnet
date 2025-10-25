@@ -1,0 +1,18 @@
+{
+    "out_dir": "./result/",
+    "lr": 0.0001,
+    "batch_size": 1,
+    "epochs": 1,
+    "grad_accum": 4,
+    "model": {
+        "model_id": "runwayml/stable-diffusion-v1-5"
+    },
+    "dataset": {
+        "img_dir": "path/to/img/dir",
+        "seg_dir": "path/to/seg/dir",
+        "img_suffix": ".jpg",
+        "seg_suffix": ".png",
+        "size": 1024,
+        "num_classes": 18
+    }
+}

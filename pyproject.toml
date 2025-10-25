@@ -1,0 +1,39 @@
+[project]
+name = "semantic-sd-controlnet"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.11.0",
+    "diffusers>=0.35.2",
+    "pydantic-settings>=2.11.0",
+    "tensorboard>=2.20.0",
+    "torch>=2.5.1",
+    "torch-tb-profiler>=0.4.3",
+    "torchvision>=0.20.1",
+    "transformers>=4.57.1",
+]
+
+[project.optional-dependencies]
+cu121 = [
+  "torch>=2.5.1",
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu121", marker = "(sys_platform == 'win32' or sys_platform == 'linux')" },
+]
+torchvision = [
+  { index = "pytorch-cu121", marker = "(sys_platform == 'win32' or sys_platform == 'linux')" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
